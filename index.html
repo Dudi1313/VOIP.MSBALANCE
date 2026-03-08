@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>voip.ms יתרה</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Heebo:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0e14;
+      --surface: #111620;
+      --border: #1e2a3a;
+      --accent: #00d4ff;
+      --accent2: #00ff9d;
+      --text: #c8d8e8;
+      --muted: #4a6080;
+      --danger: #ff4d6d;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'Heebo', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* Glow blob */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+      z-index: 1;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-header {
+      padding: 28px 32px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: #0a0e14;
+    }
+
+    .header-text h1 {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.05em;
+    }
+
+    .header-text p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin-right: auto;
+      margin-left: 0;
+      transition: background 0.3s;
+    }
+
+    .status-dot.online { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+    .status-dot.error { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+    .card-body { padding: 28px 32px; }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      direction: ltr;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
+    }
+
+    input::placeholder { color: var(--muted); }
+
+    .hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 5px;
+      line-height: 1.5;
+    }
+
+    .hint a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 2px;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform 0.25s ease;
+    }
+
+    button:hover::before { transform: scaleX(1); }
+    button:hover { color: #0a0e14; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button:disabled::before { display: none; }
+
+    button span { position: relative; z-index: 1; }
+
+    /* Result panel */
+    .result {
+      margin-top: 24px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      background: rgba(0,0,0,0.3);
+      display: none;
+    }
+
+    .result.visible { display: block; animation: fadeIn 0.3s ease; }
+
+    .result-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .balance-amount {
+      font-family: var(--mono);
+      font-size: 38px;
+      font-weight: 600;
+      color: var(--accent2);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .balance-amount .currency {
+      font-size: 18px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+
+    .balance-meta {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .meta-item {}
+    .meta-item .meta-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .meta-item .meta-value {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+      margin-top: 3px;
+    }
+
+    .error-msg {
+      color: var(--danger);
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 14px;
+      border: 1px solid rgba(255,77,109,0.3);
+      border-radius: 2px;
+      background: rgba(255,77,109,0.05);
+      margin-top: 16px;
+      display: none;
+    }
+
+    .error-msg.visible { display: block; animation: fadeIn 0.3s ease; }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(0,212,255,0.3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .timestamp {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 14px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+        </svg>
+      </div>
+      <div class="header-text">
+        <h1>VOIP.MS BALANCE</h1>
+        <p>בדיקת יתרת חשבון</p>
+      </div>
+      <div class="status-dot" id="statusDot"></div>
+    </div>
+
+    <div class="card-body">
+      <div class="field">
+        <label>שם משתמש (אימייל)</label>
+        <input type="email" id="username" placeholder="you@example.com" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label>סיסמת API</label>
+        <input type="password" id="apiPassword" placeholder="••••••••••••">
+        <div class="hint">
+          לא הסיסמה הרגילה. יש להפעיל ב:
+          <a href="https://voip.ms/m/api.php" target="_blank">voip.ms → Settings → API</a>
+        </div>
+      </div>
+
+      <button id="checkBtn" onclick="checkBalance()">
+        <span id="btnText">בדוק יתרה ← CHECK BALANCE</span>
+      </button>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <div class="result" id="result">
+        <div class="result-label">יתרה נוכחית</div>
+        <div class="balance-amount">
+          <span id="balanceValue">--</span>
+          <span class="currency">USD</span>
+        </div>
+        <div class="balance-meta">
+          <div class="meta-item">
+            <div class="meta-label">סטטוס</div>
+            <div class="meta-value" id="statusValue">--</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">חשבון</div>
+            <div class="meta-value" id="accountValue">--</div>
+          </div>
+        </div>
+        <div class="timestamp" id="timestamp"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function checkBalance() {
+      const username = document.getElementById('username').value.trim();
+      const apiPassword = document.getElementById('apiPassword').value.trim();
+      const btn = document.getElementById('checkBtn');
+      const btnText = document.getElementById('btnText');
+      const errorMsg = document.getElementById('errorMsg');
+      const result = document.getElementById('result');
+      const statusDot = document.getElementById('statusDot');
+
+      errorMsg.classList.remove('visible');
+      result.classList.remove('visible');
+
+      if (!username || !apiPassword) {
+        showError('אנא הזן שם משתמש וסיסמת API');
+        return;
+      }
+
+      btn.disabled = true;
+      btnText.innerHTML = 'מתחבר... <span class="spinner"></span>';
+      statusDot.className = 'status-dot';
+
+      try {
+        const response = await fetch('/api/balance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, apiPassword })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+          // voip.ms may return balance in different fields
+          const raw = (typeof data.balance === 'object' ? data.balance?.current_balance : data.balance) ?? data.current_balance ?? null;
+          const amount = raw !== null ? parseFloat(raw) : NaN;
+          const currency = data.currency ?? data.Currency ?? 'EUR';
+          document.getElementById('balanceValue').textContent = isNaN(amount) ? '?' : amount.toFixed(2);
+          document.querySelector('.currency').textContent = currency;
+          document.getElementById('statusValue').textContent = '✓ פעיל';
+          document.getElementById('accountValue').textContent = username.split('@')[0];
+          document.getElementById('timestamp').textContent =
+            'עדכון: ' + new Date().toLocaleString('he-IL');
+          // debug: log full response
+          console.log('voip.ms response:', JSON.stringify(data));
+          result.classList.add('visible');
+          statusDot.className = 'status-dot online';
+        } else {
+          const msg = data.status === 'invalid_credentials'
+            ? 'פרטי התחברות שגויים – בדוק שם משתמש וסיסמת API'
+            : (data.status || 'שגיאה לא ידועה מ-voip.ms');
+          showError(msg);
+          statusDot.className = 'status-dot error';
+        }
+      } catch (e) {
+        showError('לא ניתן להתחבר לשרת. האם הפעלת את server.js?');
+        statusDot.className = 'status-dot error';
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'בדוק יתרה ← CHECK BALANCE';
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = '⚠ ' + msg;
+      el.classList.add('visible');
+    }
+
+    // Allow Enter key
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkBalance();
+    });
+  </script>
+</body>
+</html>

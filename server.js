@@ -56,6 +56,22 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.url === '/balance.txt') {
+    try {
+      const [voip, rates] = await Promise.all([fetchVoipBalance(), fetchRates()]);
+      const raw = typeof voip.balance === 'object' ? voip.balance?.current_balance : voip.balance;
+      const eur = parseFloat(raw);
+      const usd = (eur * rates.rates.USD).toFixed(2);
+      const ils = (eur * rates.rates.ILS).toFixed(2);
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('$' + usd + ' | ₪' + ils);
+    } catch (e) {
+      res.writeHead(500);
+      res.end('שגיאה');
+    }
+    return;
+  }
+
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end(`<!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -129,19 +145,5 @@ const server = http.createServer(async (req, res) => {
 </body>
 </html>`);
 });
-if (req.url === '/balance.txt') {
-    try {
-      const [voip, rates] = await Promise.all([fetchVoipBalance(), fetchRates()]);
-      const raw = typeof voip.balance === 'object' ? voip.balance?.current_balance : voip.balance;
-      const eur = parseFloat(raw);
-      const usd = (eur * rates.rates.USD).toFixed(2);
-      const ils = (eur * rates.rates.ILS).toFixed(2);
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end(`$${usd} | ₪${ils}`);
-    } catch (e) {
-      res.writeHead(500);
-      res.end('שגיאה');
-    }
-    return;
-  }
+
 server.listen(PORT, () => console.log(`✅ Running on port ${PORT}`));

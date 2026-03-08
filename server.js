@@ -64,7 +64,7 @@ const server = http.createServer(async (req, res) => {
       const usd = (eur * rates.rates.USD).toFixed(2);
       const ils = (eur * rates.rates.ILS).toFixed(2);
       res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end('$' + usd + ' | ₪' + ils);
+      res.end('$' + usd + ' | NIS ' + ils);
     } catch (e) {
       res.writeHead(500);
       res.end('שגיאה');

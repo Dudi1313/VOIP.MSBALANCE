@@ -1,9 +1,14 @@
 const http = require('http');
 const https = require('https');
+const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
 const USERNAME = process.env.VOIP_USERNAME;
 const API_PASSWORD = process.env.VOIP_API_PASSWORD;
+const ZADARMA_KEY = process.env.ZADARMA_KEY;
+const ZADARMA_SECRET = process.env.ZADARMA_SECRET;
+
+// ─── voip.ms helpers ──────────────────────────────────────────────────────────
 
 function fetchVoipBalance() {
   return new Promise((resolve, reject) => {
@@ -32,7 +37,154 @@ function fetchRates() {
   });
 }
 
+// ─── Zadarma helpers ──────────────────────────────────────────────────────────
+
+function zadarmaSign(method, params) {
+  // Sort params alphabetically by key
+  const sorted = Object.keys(params).sort().reduce((acc, k) => {
+    acc[k] = params[k];
+    return acc;
+  }, {});
+
+  // Build query string
+  const queryString = Object.entries(sorted)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+
+  // md5 of query string
+  const md5 = crypto.createHash('md5').update(queryString).digest('hex');
+
+  // string to sign: method + queryString + md5
+  const strToSign = method + queryString + md5;
+
+  // HMAC-SHA1 with secret, then base64
+  const signature = crypto
+    .createHmac('sha1', ZADARMA_SECRET)
+    .update(strToSign)
+    .digest('base64');
+
+  return { queryString, signature };
+}
+
+function fetchZadarmaStats(params) {
+  return new Promise((resolve, reject) => {
+    const method = '/v1/statistics/';
+    const { queryString, signature } = zadarmaSign(method, params);
+
+    const options = {
+      hostname: 'api.zadarma.com',
+      path: `${method}?${queryString}`,
+      method: 'GET',
+      headers: {
+        'Authorization': `${ZADARMA_KEY}:${signature}`
+      }
+    };
+
+    https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch (e) { reject(new Error('Invalid JSON from Zadarma')); }
+      });
+    }).on('error', reject).end();
+  });
+}
+
+function formatDateTime(date) {
+  // Returns "YYYY-MM-DD HH:MM:SS" in UTC (Zadarma works in UTC)
+  return date.toISOString().replace('T', ' ').substring(0, 19);
+}
+
+function classifyCall(stat) {
+  const seconds = parseInt(stat.billseconds) || 0;
+
+  // Determine direction: if "from" looks like our SIP or internal number → outgoing
+  // Zadarma statistics: "from" = caller, "to" = destination
+  // For outgoing calls "from" is our SIP number (short, like 00001)
+  // For incoming calls "from" is the external number (long)
+  // We use a simple heuristic: if "from" is short (≤6 chars) → outgoing
+  const fromStr = String(stat.from || '');
+  const isOutgoing = fromStr.length <= 6;
+
+  const direction = isOutgoing ? 'outgoing' : 'incoming';
+
+  let callType;
+  if (seconds < 10) {
+    const d = (stat.disposition || '').toLowerCase();
+    if (d === 'busy') callType = 'נדחתה';
+    else if (d === 'cancel' || d === 'no answer') callType = 'בוטלה';
+    else callType = 'בוטלה';
+  } else {
+    callType = 'answered';
+  }
+
+  return { direction, callType, seconds };
+}
+
+// ─── HTTP server ──────────────────────────────────────────────────────────────
+
 const server = http.createServer(async (req, res) => {
+
+  // ── /zadarma/last-call ────────────────────────────────────────────────────
+  if (req.url && req.url.startsWith('/zadarma/last-call')) {
+    const urlObj = new URL(req.url, `http://localhost`);
+    const lastId = urlObj.searchParams.get('last_id') || '';
+
+    try {
+      // Fetch last 30 minutes of stats
+      const now = new Date();
+      const from = new Date(now.getTime() - 30 * 60 * 1000);
+
+      const stats = await fetchZadarmaStats({
+        start: formatDateTime(from),
+        end: formatDateTime(now),
+        limit: '20'
+      });
+
+      if (stats.status !== 'success' || !stats.stats || stats.stats.length === 0) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'no_new_call' }));
+        return;
+      }
+
+      // Sort by callstart descending (most recent first)
+      const sorted = stats.stats.sort((a, b) =>
+        new Date(b.callstart) - new Date(a.callstart)
+      );
+
+      // Find first call with different id than lastId
+      const newCall = sorted.find(s => String(s.id) !== String(lastId));
+
+      if (!newCall) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'no_new_call' }));
+        return;
+      }
+
+      const { direction, callType, seconds } = classifyCall(newCall);
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        status: 'new_call',
+        id: String(newCall.id),
+        callstart: newCall.callstart,
+        from: String(newCall.from),
+        to: String(newCall.to),
+        direction,        // "incoming" | "outgoing"
+        call_type: callType, // "answered" | "נדחתה" | "בוטלה"
+        seconds,
+        disposition: newCall.disposition
+      }));
+
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'error', message: e.message }));
+    }
+    return;
+  }
+
+  // ── /api/balance ──────────────────────────────────────────────────────────
   if (req.url === '/api/balance') {
     try {
       const [voip, rates] = await Promise.all([fetchVoipBalance(), fetchRates()]);
@@ -56,6 +208,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ── /balance.txt ──────────────────────────────────────────────────────────
   if (req.url === '/balance.txt') {
     try {
       const [voip, rates] = await Promise.all([fetchVoipBalance(), fetchRates()]);
@@ -73,6 +226,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ── HTML home page ─────────────────────────────────────────────────────────
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end(`<!DOCTYPE html>
 <html lang="he" dir="rtl">

@@ -106,7 +106,8 @@ const server = http.createServer(async (req, res) => {
         end: formatDateTime(now),
         limit: '20'
       });
-      if (stats.status !== 'success' || !stats.stats || stats.stats.length === 0) {
+      console.log('Zadarma response:', JSON.stringify(stats));
+if (stats.status !== 'success' || !stats.stats || stats.stats.length === 0) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'no_new_call' }));
         return;

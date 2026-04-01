@@ -45,6 +45,11 @@ function zadarmaSign(method, params) {
     .join('&');
   const md5 = crypto.createHash('md5').update(queryString).digest('hex');
   const strToSign = method + queryString + md5;
+  console.log('method:', method);
+console.log('queryString:', queryString);
+console.log('md5:', md5);
+console.log('strToSign:', strToSign);
+console.log('key:', ZADARMA_SECRET ? 'exists' : 'missing');
   const signature = crypto
     .createHmac('sha1', ZADARMA_SECRET)
     .update(strToSign)

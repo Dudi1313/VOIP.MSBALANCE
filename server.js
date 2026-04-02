@@ -101,7 +101,6 @@ const server = http.createServer(async (req, res) => {
       const now = new Date();
       const from = new Date(now.getTime() - 30 * 60 * 1000);
      const stats = await fetchZadarmaStats({
-  format: 'json',
   start: formatDateTime(from),
   end: formatDateTime(now),
   limit: '20'

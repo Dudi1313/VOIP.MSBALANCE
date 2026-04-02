@@ -73,7 +73,8 @@ function fetchZadarmaStats(params) {
 }
 
 function formatDateTime(date) {
-  return date.toISOString().replace('T', ' ').substring(0, 19);
+  const israelTime = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+  return israelTime.toISOString().replace('T', ' ').substring(0, 19);
 }
 
 function classifyCall(stat) {

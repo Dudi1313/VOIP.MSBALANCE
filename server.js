@@ -48,10 +48,9 @@ function fetchZadarmaStats(params) {
   .join('&');
     const md5 = crypto.createHash('md5').update(queryString).digest('hex');
     const strToSign = method + queryString + md5;
-    const signature = crypto
-      .createHmac('sha1', ZADARMA_SECRET)
-      .update(strToSign)
-      .digest('base64');
+  const signature = Buffer.from(
+  crypto.createHmac('sha1', ZADARMA_SECRET).update(strToSign).digest('hex')
+).toString('base64');
     console.log('queryString:', queryString);
     console.log('strToSign:', strToSign);
     console.log('signature:', signature);

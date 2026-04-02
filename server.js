@@ -38,29 +38,26 @@ function fetchRates() {
 function fetchZadarmaStats(params) {
   return new Promise((resolve, reject) => {
     const method = '/v1/statistics/';
+    params['format'] = 'json';
     const sorted = Object.keys(params).sort().reduce((acc, k) => {
       acc[k] = params[k];
       return acc;
     }, {});
-    
- const queryString = Object.entries(sorted)
-  .map(([k, v]) => `${k}=${String(v).replace(/ /g, '+')}`)
-  .join('&');   
+    const queryString = Object.entries(sorted)
+      .map(([k, v]) => `${k}=${String(v).replace(/ /g, '+')}`)
+      .join('&');
     const md5 = crypto.createHash('md5').update(queryString).digest('hex');
     const strToSign = method + queryString + md5;
     const signature = crypto
       .createHmac('sha1', ZADARMA_SECRET)
       .update(strToSign)
       .digest('base64');
-    const urlQuery = Object.entries(sorted)
-      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-      .join('&');
     console.log('queryString:', queryString);
     console.log('strToSign:', strToSign);
     console.log('signature:', signature);
     const options = {
       hostname: 'api.zadarma.com',
-      path: `${method}?${urlQuery}`,
+      path: `${method}?${queryString}`,
       method: 'GET',
       headers: { 'Authorization': `${ZADARMA_KEY}:${signature}` }
     };

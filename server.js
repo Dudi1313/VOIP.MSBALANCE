@@ -35,24 +35,27 @@ function fetchRates() {
   });
 }
 
-console.log('AUTH HEADER:', `${ZADARMA_KEY}:${signature}`);
-function zadarmaSign(method, params) {
-  const sorted = Object.keys(params).sort().reduce((acc, k) => {
-    acc[k] = params[k];
-    return acc;
-  }, {});
-  const queryString = Object.entries(sorted)
-    .map(([k, v]) => `${k}=${v}`)
-    .join('&');
-  const md5 = crypto.createHash('md5').update(queryString).digest('hex');
-  const strToSign = method + queryString + md5;
-  const signature = crypto
-    .createHmac('sha1', ZADARMA_SECRET)
-    .update(strToSign)
-    .digest('base64');
-  return { queryString: Object.entries(sorted)
-    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-    .join('&'), signature };
+function fetchZadarmaStats(params) {
+  return new Promise((resolve, reject) => {
+    const method = '/v1/statistics/';
+    const { queryString, signature } = zadarmaSign(method, params);
+    console.log('AUTH HEADER:', `${ZADARMA_KEY}:${signature}`);
+    console.log('PATH:', `${method}?${queryString}`);
+    const options = {
+      hostname: 'api.zadarma.com',
+      path: `${method}?${queryString}`,
+      method: 'GET',
+      headers: { 'Authorization': `${ZADARMA_KEY}:${signature}` }
+    };
+    https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch (e) { reject(new Error('Invalid JSON from Zadarma')); }
+      });
+    }).on('error', reject).end();
+  });
 }
 function fetchZadarmaStats(params) {
   return new Promise((resolve, reject) => {

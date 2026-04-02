@@ -43,9 +43,9 @@ function fetchZadarmaStats(params) {
       acc[k] = params[k];
       return acc;
     }, {});
-    const queryString = Object.entries(sorted)
-      .map(([k, v]) => `${k}=${String(v).replace(/ /g, '+')}`)
-      .join('&');
+  const queryString = Object.entries(sorted)
+  .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
+  .join('&');
     const md5 = crypto.createHash('md5').update(queryString).digest('hex');
     const strToSign = method + queryString + md5;
     const signature = crypto

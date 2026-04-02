@@ -41,22 +41,18 @@ function zadarmaSign(method, params) {
     return acc;
   }, {});
   const queryString = Object.entries(sorted)
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .map(([k, v]) => `${k}=${v}`)
     .join('&');
   const md5 = crypto.createHash('md5').update(queryString).digest('hex');
   const strToSign = method + queryString + md5;
-  console.log('method:', method);
-console.log('queryString:', queryString);
-console.log('md5:', md5);
-console.log('strToSign:', strToSign);
-console.log('key:', ZADARMA_SECRET ? 'exists' : 'missing');
   const signature = crypto
     .createHmac('sha1', ZADARMA_SECRET)
     .update(strToSign)
     .digest('base64');
-  return { queryString, signature };
+  return { queryString: Object.entries(sorted)
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join('&'), signature };
 }
-
 function fetchZadarmaStats(params) {
   return new Promise((resolve, reject) => {
     const method = '/v1/statistics/';

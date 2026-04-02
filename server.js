@@ -38,7 +38,7 @@ function fetchRates() {
 function fetchZadarmaStats(params) {
   return new Promise((resolve, reject) => {
     const method = '/v1/statistics/';
-    params['format'] = 'json';
+   
     const sorted = Object.keys(params).sort().reduce((acc, k) => {
       acc[k] = params[k];
       return acc;

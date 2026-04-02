@@ -35,6 +35,7 @@ function fetchRates() {
   });
 }
 
+console.log('AUTH HEADER:', `${ZADARMA_KEY}:${signature}`);
 function zadarmaSign(method, params) {
   const sorted = Object.keys(params).sort().reduce((acc, k) => {
     acc[k] = params[k];

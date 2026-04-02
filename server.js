@@ -35,12 +35,27 @@ function fetchRates() {
   });
 }
 
+function zadarmaSign(method, params) {
+  const sorted = Object.keys(params).sort().reduce((acc, k) => {
+    acc[k] = params[k];
+    return acc;
+  }, {});
+  const queryString = Object.entries(sorted)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+  const md5 = crypto.createHash('md5').update(queryString).digest('hex');
+  const strToSign = method + queryString + md5;
+  const signature = crypto
+    .createHmac('sha1', ZADARMA_SECRET)
+    .update(strToSign)
+    .digest('base64');
+  return { queryString, signature };
+}
+
 function fetchZadarmaStats(params) {
   return new Promise((resolve, reject) => {
     const method = '/v1/statistics/';
     const { queryString, signature } = zadarmaSign(method, params);
-    console.log('AUTH HEADER:', `${ZADARMA_KEY}:${signature}`);
-    console.log('PATH:', `${method}?${queryString}`);
     const options = {
       hostname: 'api.zadarma.com',
       path: `${method}?${queryString}`,
@@ -58,6 +73,9 @@ function fetchZadarmaStats(params) {
   });
 }
 
+function formatDateTime(date) {
+  return date.toISOString().replace('T', ' ').substring(0, 19);
+}
 
 function classifyCall(stat) {
   const seconds = parseInt(stat.billseconds) || 0;
@@ -88,8 +106,7 @@ const server = http.createServer(async (req, res) => {
         end: formatDateTime(now),
         limit: '20'
       });
-      console.log('Zadarma response:', JSON.stringify(stats));
-if (stats.status !== 'success' || !stats.stats || stats.stats.length === 0) {
+      if (stats.status !== 'success' || !stats.stats || stats.stats.length === 0) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'no_new_call' }));
         return;

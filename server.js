@@ -79,20 +79,16 @@ function formatDateTime(date) {
 
 function classifyCall(stat) {
   const seconds = parseInt(stat.billseconds) || 0;
+  const disposition = (stat.disposition || '').toLowerCase();
   const fromStr = String(stat.from || '');
-  const isOutgoing = fromStr.length <= 6;
+  const isOutgoing = fromStr === '972585858528';
   const direction = isOutgoing ? 'outgoing' : 'incoming';
   let callType;
-  if (seconds < 10) {
-    const d = (stat.disposition || '').toLowerCase();
-    if (d === 'busy') callType = 'נדחתה';
-    else callType = 'בוטלה';
-  } else {
-    callType = 'answered';
-  }
+  if (disposition === 'busy') callType = 'נדחתה';
+  else if (disposition === 'cancel' || disposition === 'no answer' || seconds === 0) callType = 'בוטלה';
+  else callType = 'answered';
   return { direction, callType, seconds };
 }
-
 const server = http.createServer(async (req, res) => {
 
   if (req.url && req.url.startsWith('/zadarma/last-call')) {

@@ -104,11 +104,12 @@ const server = http.createServer(async (req, res) => {
     try {
       const now = new Date();
       const from = new Date(now.getTime() - 30 * 60 * 1000);
-      const stats = await fetchZadarmaStats({
-        start: formatDateTime(from),
-        end: formatDateTime(now),
-        limit: '20'
-      });
+     const stats = await fetchZadarmaStats({
+  format: 'json',
+  start: formatDateTime(from),
+  end: formatDateTime(now),
+  limit: '20'
+});
       if (stats.status !== 'success' || !stats.stats || stats.stats.length === 0) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'no_new_call' }));

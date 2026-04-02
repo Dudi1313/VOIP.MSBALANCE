@@ -57,30 +57,7 @@ function fetchZadarmaStats(params) {
     }).on('error', reject).end();
   });
 }
-function fetchZadarmaStats(params) {
-  return new Promise((resolve, reject) => {
-    const method = '/v1/statistics/';
-    const { queryString, signature } = zadarmaSign(method, params);
-    const options = {
-      hostname: 'api.zadarma.com',
-      path: `${method}?${queryString}`,
-      method: 'GET',
-      headers: { 'Authorization': `${ZADARMA_KEY}:${signature}` }
-    };
-    https.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try { resolve(JSON.parse(data)); }
-        catch (e) { reject(new Error('Invalid JSON from Zadarma')); }
-      });
-    }).on('error', reject).end();
-  });
-}
 
-function formatDateTime(date) {
-  return date.toISOString().replace('T', ' ').substring(0, 19);
-}
 
 function classifyCall(stat) {
   const seconds = parseInt(stat.billseconds) || 0;

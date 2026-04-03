@@ -93,6 +93,8 @@ const server = http.createServer(async (req, res) => {
     try {
       const now = new Date();
       const from = new Date(now.getTime() - 30 * 60 * 1000);
+      console.log('searching from:', formatDateTime(from), 'to:', formatDateTime(now));
+      console.log('lastId received:', lastId);
       const stats = await fetchZadarmaStats({
         start: formatDateTime(from),
         end: formatDateTime(now),

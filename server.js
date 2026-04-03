@@ -96,11 +96,11 @@ const server = http.createServer(async (req, res) => {
       console.log('searching from:', formatDateTime(from), 'to:', formatDateTime(now));
       console.log('lastId received:', lastId);
       const stats = await fetchZadarmaStats({
-      console.log('Zadarma stats:', JSON.stringify(stats));
-        start: formatDateTime(from),
+       start: formatDateTime(from),
         end: formatDateTime(now),
         limit: '20'
       });
+      console.log('Zadarma stats:', JSON.stringify(stats));
       if (stats.status !== 'success' || !stats.stats || stats.stats.length === 0) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'no_new_call' }));

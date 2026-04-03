@@ -8,8 +8,6 @@ const API_PASSWORD = process.env.VOIP_API_PASSWORD;
 const ZADARMA_KEY = process.env.ZADARMA_KEY;
 const ZADARMA_SECRET = process.env.ZADARMA_SECRET;
 
-let lastCallId = '';
-
 function fetchVoipBalance() {
   return new Promise((resolve, reject) => {
     const apiUrl = `https://voip.ms/api/v1/rest.php?api_username=${encodeURIComponent(USERNAME)}&api_password=${encodeURIComponent(API_PASSWORD)}&method=getBalance`;
@@ -90,6 +88,8 @@ function classifyCall(stat) {
 const server = http.createServer(async (req, res) => {
 
   if (req.url && req.url.startsWith('/zadarma/last-call')) {
+    const urlObj = new URL(req.url, 'http://localhost');
+    const lastId = urlObj.searchParams.get('last_id') || '';
     try {
       const now = new Date();
       const from = new Date(now.getTime() - 30 * 60 * 1000);
@@ -104,13 +104,12 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const sorted = stats.stats.sort((a, b) => new Date(b.callstart) - new Date(a.callstart));
-      const newCall = sorted.find(s => String(s.id) !== String(lastCallId));
+      const newCall = sorted.find(s => String(s.id) !== String(lastId));
       if (!newCall) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'no_new_call' }));
         return;
       }
-      lastCallId = String(newCall.id);
       const { direction, callType, seconds } = classifyCall(newCall);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({

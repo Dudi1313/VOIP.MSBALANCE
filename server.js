@@ -224,9 +224,3 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => console.log(`✅ Running on port ${PORT}`));
 ```
-
-תחליף את כל `server.js` בזה ותעשה Commit. 
-
-ב-Automate — תמחק את כל הבלוקים הקשורים ל-`zadarma_last_id` (`Atomic load`, `Variable set`, `Atomic store`). ה-URL יהיה פשוט:
-```
-https://voip-msbalance.onrender.com/zadarma/last-call

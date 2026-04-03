@@ -96,7 +96,7 @@ const server = http.createServer(async (req, res) => {
       console.log('searching from:', formatDateTime(from), 'to:', formatDateTime(now));
       console.log('lastId received:', lastId);
       const stats = await fetchZadarmaStats({
-        console.log('Zadarma stats:', JSON.stringify(stats));
+      console.log('Zadarma stats:', JSON.stringify(stats));
         start: formatDateTime(from),
         end: formatDateTime(now),
         limit: '20'

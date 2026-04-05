@@ -78,7 +78,7 @@ function classifyCall(stat) {
   const seconds = parseInt(stat.billseconds) || 0;
   const disposition = (stat.disposition || '').toLowerCase();
   const fromStr = String(stat.from || '');
-  const isOutgoing = fromStr === '972585858528';
+  const isOutgoing = String(stat.to) !== '972555073682';
   const direction = isOutgoing ? 'outgoing' : 'incoming';
   let callType;
   if (disposition === 'busy') callType = 'נדחתה';

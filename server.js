@@ -109,7 +109,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const sorted = stats.stats.sort((a, b) => new Date(b.callstart) - new Date(a.callstart));
-      const newCall = sorted.find(s => String(s.id) !== String(lastId));
+      const newCall = sorted.find(s => String(s.callstart) !== String(lastId));
       if (!newCall) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'no_new_call' }));
